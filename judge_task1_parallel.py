@@ -6,10 +6,10 @@
 |- <in> (データセット)
     |- 0000.in
 """
+import argparse
 import subprocess
 import time
 import os
-import re
 
 def scoring(weight,Ans):
     Sum=[0,0]
@@ -18,20 +18,26 @@ def scoring(weight,Ans):
     return abs(Sum[0]-Sum[1])
 
 if __name__ == "__main__":
+    #引数の設定
+    parser=argparse.ArgumentParser(description="judge task 1")
+    parser.add_argument("--path","-p",type=str,default="in",help="testcases' path")
+    parser.add_argument("--source","-s",type=str,help="sourcefile to judge",required=True)
+    args=parser.parse_args()
+
     #windowsかUNIXかを取得(実行時に叩くコマンドが変わるため)
     osname=os.name
     #ジャッジするコードのファイル名を入力してもらう
-    sourcefile="task1.c"
+    sourcefile=args.source
 
     #テストケースの取得
-    testcase_path="in/"
+    testcase_path=args.path
     files=os.listdir(testcase_path)
     testcases=[os.path.join(testcase_path,f) for f in files if os.path.isfile(os.path.join(testcase_path,f))]
     testcases.sort()
 
     #コンパイル
     #g++にしてるのはWindows系でgccを叩くとウイルスバスターが悪さをしてバイナリを消してしまうことがあるため
-    subprocess.run("g++ -o a_task1 -O2 "+sourcefile,shell=True)
+    subprocess.run("g++ -o a_task1 -O3 "+sourcefile,shell=True)
     
     #実行コマンドの指定
     if osname=="nt":
@@ -48,9 +54,13 @@ if __name__ == "__main__":
     Ans=[0 for i in range(len(testcases))]
     for i in range(len(procs)):
         stdout,stderr=procs[i].communicate()
-        Ans[i]=stdout.decode()
-    Ans=[i[:-2] if osname=='nt' else i[:-1] for i in Ans]
-    
+        stdout=stdout.decode()
+        L=stdout.split("\n")
+        for j in L:
+            if j!="" and j[0]!="#":
+                stdout=j
+        Ans[i]=stdout
+    Ans=[i.split("\r")[0] if osname=='nt' else i for i in Ans]
 
     #得点を格納しておく
     score_all=[]

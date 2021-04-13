@@ -6,10 +6,10 @@
 |- <in> (データセット)
     |- 0000.in
 """
+import argparse
 import subprocess
 import time
 import os
-import re
 
 def scoring(weight,Ans):
     Sum=[0,0]
@@ -27,16 +27,23 @@ def exec_subprocess(cmd: str) -> (str, str, int):
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = child.communicate()
     rt = child.returncode
-    return stdout.decode(), stderr.decode(), rt
+    return stdout.decode(), stderr.decode(),rt
+    #return stdout.decode(), stderr.decode(), rt
 
 if __name__ == "__main__":
+    #引数の設定
+    parser=argparse.ArgumentParser(description="judge task 1")
+    parser.add_argument("--path","-p",type=str,default="in",help="testcases' path")
+    parser.add_argument("--source","-s",type=str,help="sourcefile to judge",required=True)
+    args=parser.parse_args()
+
     #windowsかUNIXかを取得(実行時に叩くコマンドが変わるため)
     osname=os.name
     #ジャッジするコードのファイル名を入力してもらう
-    sourcefile=input("input sourcefile's name: ")
+    sourcefile=args.source
 
     #テストケースの取得
-    testcase_path="in/"
+    testcase_path=args.path
     files=os.listdir(testcase_path)
     testcases=[os.path.join(testcase_path,f) for f in files if os.path.isfile(os.path.join(testcase_path,f))]
     testcases.sort()
@@ -46,7 +53,7 @@ if __name__ == "__main__":
 
     #コンパイル
     #g++にしてるのはWindows系でgccを叩くとウイルスバスターが悪さをしてバイナリを消してしまうことがあるため
-    subprocess.run("g++ -o a_task1 -O2 "+sourcefile,shell=True)
+    subprocess.run("g++ -o a_task1 -O3 "+sourcefile,shell=True)
     
     #実行コマンドの指定
     if osname=="nt":
@@ -61,11 +68,19 @@ if __name__ == "__main__":
         start=time.time()
         stdout, stderr, rt = exec_subprocess(cmd_str)
         end=time.time()
+        L=stdout.split("\n")
+        for j in L:
+            if  j!="" and j[0]!="#":
+                stdout=j
         #エスケープシーケンスを削除
         if osname=="nt":
-            stdout=stdout[:-2]
+            #あとで検証する
+            L=stdout.split("\r")
+            stdout=L[0]
+        """
         else:
             stdout=stdout[:-1]
+        """
 
         #TLEしていないか
         if end-start>600:
@@ -96,4 +111,4 @@ if __name__ == "__main__":
         else:
             score_all.append(float('inf'))
         
-print("score:",sum(score_all))
+    print("score:",sum(score_all))
