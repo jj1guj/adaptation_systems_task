@@ -1,5 +1,5 @@
-#pragma GCC target("avx2")
-#pragma GCC optimize("O3")
+//#pragma GCC target("avx2")
+#pragma GCC optimize("Ofast")
 #pragma GCC optimize("unroll-loops")
 #pragma GCC target("sse,sse2,sse3,ssse3,sse4,popcnt,abm,mmx,avx,tune=native")
 
@@ -77,14 +77,15 @@ int main(int argc,char **argv){
 
     greedy();
     score_best=scoring();
-    printf("# %d: %1.30e\n",clock()-start,score_best);
+    //printf("# %d: %1.30e\n",clock()-start,score_best);
+    printf("# %.0lf: %1.30e\n",(double)(clock()-start)/CLOCKS_PER_SEC*1000,score_best);
 
     //乱数の初期化
     srand((unsigned int)time(NULL));
     end=clock();
 
     //局所探索(焼きなまし)
-    while(end-start<=TL){
+    while(((double)end-start)/CLOCKS_PER_SEC*1000<=TL){
         //交叉方法
         //1点交叉: 任意の1点を選んで反転
         //多点交叉: 任意の幅を選んで反転
@@ -187,7 +188,7 @@ int main(int argc,char **argv){
         
         if(score_best>score_ref){
             score_best=score_ref;
-            printf("# %d: %1.30e\n",clock()-start,score_best);
+            printf("# %.0lf: %1.30e\n",(double)(clock()-start)/CLOCKS_PER_SEC*1000,score_best);
             //最適解を保存しておく
             for(int i=0;i<n_weights;++i)Ans_best[i]=Ans[i];
         }
