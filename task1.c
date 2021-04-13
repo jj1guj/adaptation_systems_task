@@ -58,7 +58,7 @@ int main(int argc,char **argv){
     clock_t start=clock();//実行時間の計測開始
     clock_t end;
     long int itr=0;
-    double TL=600000-10;//[msec]
+    double TL=600*1000-10;//[msec]
     double T0=1e10;
     double T1=1e2;
     double score_best;
