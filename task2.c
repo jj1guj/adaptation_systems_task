@@ -97,6 +97,9 @@ int main(int argc,char**argv){
     end=clock();
 
     //焼きなまし
+    //1点交叉(1): 最大値のグループから1つ選んでランダムな値に書き換える
+    //1点交叉(2): 最小値以外のグループから1つ選んで最小値のグループに書き換える
+    //2点swap: かならず片方は最大値もしくは最小値のグループにする
     while((double)(end-start)/CLOCKS_PER_SEC*1000<=TL){
         double score_ref;
         if(rand()%2==0){
