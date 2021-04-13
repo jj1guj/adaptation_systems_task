@@ -1,7 +1,7 @@
 //#pragma GCC target("avx2")
 #pragma GCC optimize("Ofast")
 #pragma GCC optimize("unroll-loops")
-#pragma GCC target("sse,sse2,sse3,ssse3,sse4,popcnt,abm,mmx,avx,tune=native")
+#pragma GCC target("sse,sse2,sse3,ssse3,sse4,popcnt,abm,mmx,avx,avx2,tune=native")
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -75,6 +75,8 @@ int main(int argc,char **argv){
     }
     fclose(fp);
 
+    score_best=scoring();
+    printf("# %.0lf: %1.30e\n",(double)(clock()-start)/CLOCKS_PER_SEC*1000,score_best);
     greedy();
     score_best=scoring();
     //printf("# %d: %1.30e\n",clock()-start,score_best);
