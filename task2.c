@@ -16,7 +16,7 @@
 double max(double a,double b){return a>b?a:b;};
 double min(double a,double b){return a<b?a:b;};
 
-int group_num;
+int group_num,curmax,curmin;
 double weight[N],weight_sorted[N];
 double Sum[16],Smax,Smin;
 double Ave=0;
@@ -30,6 +30,9 @@ char* L="ABCDEF";
 double scoring(){
     double maxval=Sum[0],minval=Sum[0];
     for(int i=1;i<group_num;++i){
+        if(Sum[i]>maxval)curmax=i;
+        if(Sum[i]<minval)curmin=i;
+
         maxval=max(maxval,Sum[i]);
         minval=min(minval,Sum[i]);
     }
@@ -60,8 +63,8 @@ int main(int argc,char**argv){
     clock_t end;
     long int itr=0;
     double TL=60*1000-10;//[msec]
-    double T0=1e10;
-    double T1=1e2;
+    double T0=1e-100;
+    double T1=1e-100;
 
     //乱数の初期化
     srand((unsigned int)time(NULL));
@@ -93,6 +96,7 @@ int main(int argc,char**argv){
     score_best=scoring();
 
     printf("# %.0lf: %1.30e\n",(double)(clock()-start)/CLOCKS_PER_SEC*1000,score_best);
+    //printf("%lf %lf\n",Sum[curmin],Sum[curmax]);
     for(int i=0;i<n_weights;++i)Ans_best[i]=Ans[i];
     end=clock();
 
@@ -100,24 +104,68 @@ int main(int argc,char**argv){
     //1点交叉(1): 最大値のグループから1つ選んでランダムな値に書き換える
     //1点交叉(2): 最小値以外のグループから1つ選んで最小値のグループに書き換える
     //2点swap: かならず片方は最大値もしくは最小値のグループにする
+    int refmin,refmax;
     while((double)(end-start)/CLOCKS_PER_SEC*1000<=TL){
+    //while(itr<=1000){
         double score_ref;
-        if(rand()%2==0){
-            //1点交叉
+        double s;
+        if(rand()%3==0){
+            //1点交叉(1): 最大値のグループから1つ選んでランダムな値に書き換える
+            refmax=curmax;refmin=curmin;
             int cur=rand()%n_weights;
+            while(Ans[cur]==curmax)cur=rand()%n_weights;
             int val=rand()%group_num;
             while(Ans[cur]==val)val=rand()%group_num;
+
             Sum[Ans[cur]]-=weight[cur];
             Sum[val]+=weight[cur];
             score_ref=scoring();
+            //printf("%lf %lf %lf\n",Sum[curmin],Sum[curmax],score_ref);
+            //printf("%lf %lf\n",Sum[curmin],Sum[curmax]);
+            //printf("%lf\n",score_ref);
 
             if(score_ref>score_best){
+                /*curmax=refmax;curmin=refmin;
+                Sum[Ans[cur]]+=weight[cur];
+                Sum[val]-=weight[cur];*/
                 double rnd=rand()/(double)RAND_MAX;
                 double t=(end-start)/TL;
                 double T=powf(T0,1.0-t)*powf(T1,t);
                 double p=expf((score_best-score_ref)/T);
                 //rnd<=pなら採用, rnd>pならもとに戻す
                 if(rnd>p){
+                    curmax=refmax;curmin=refmin;
+                    Sum[Ans[cur]]+=weight[cur];
+                    Sum[val]-=weight[cur];
+                }else{
+                    Ans[cur]=val;
+                }
+            }else{
+                Ans[cur]=val;
+            }
+        }else if(rand()%3==1){
+            //1点交叉(2): 最小値以外のグループから1つ選んで最小値のグループに書き換える
+            refmax=curmax;refmin=curmin;
+            int cur=rand()%n_weights;
+            while(Ans[cur]==curmin)cur=rand()%n_weights;
+            int val=curmin;
+            
+            Sum[Ans[cur]]-=weight[cur];
+            Sum[val]+=weight[cur];
+            score_ref=scoring();
+            //printf("%lf %lf %lf\n",Sum[curmin],Sum[curmax],score_ref);
+
+            if(score_ref>score_best){
+                /*curmax=refmax;curmin=refmin;
+                Sum[Ans[cur]]+=weight[cur];
+                Sum[val]-=weight[cur];*/
+                double rnd=rand()/(double)RAND_MAX;
+                double t=(end-start)/TL;
+                double T=powf(T0,1.0-t)*powf(T1,t);
+                double p=expf((score_best-score_ref)/T);
+                //rnd<=pなら採用, rnd>pならもとに戻す
+                if(rnd>p){
+                    curmax=refmax;curmin=refmin;
                     Sum[Ans[cur]]+=weight[cur];
                     Sum[val]-=weight[cur];
                 }else{
@@ -127,20 +175,29 @@ int main(int argc,char**argv){
                 Ans[cur]=val;
             }
         }else{
-            //2点swap
+            //2点swap: かならず片方は最大値もしくは最小値のグループにする
+            refmax=curmax;refmin=curmin;
             int cur1=rand()%n_weights,cur2=rand()%n_weights;
-            while(cur1==cur2||Ans[cur1]==Ans[cur2])cur2=rand()%n_weights;
+            while(cur1==cur2||Ans[cur1]==Ans[cur2]||(cur1!=curmin&&cur2!=curmin&&cur1!=curmax&&cur2!=curmax)){
+                cur1=rand()%n_weights;
+                cur2=rand()%n_weights;
+            }
             Sum[Ans[cur1]]+=weight[cur2]-weight[cur1];
             Sum[Ans[cur2]]+=weight[cur1]-weight[cur2];
             score_ref=scoring();
+            //printf("%lf %lf %lf\n",Sum[curmin],Sum[curmax],score_ref);
 
             if(score_ref>score_best){
+                /*curmax=refmax;curmin=refmin;
+                Sum[Ans[cur1]]-=weight[cur2]-weight[cur1];
+                Sum[Ans[cur2]]-=weight[cur1]-weight[cur2];*/
                 double rnd=rand()/(double)RAND_MAX;
                 double t=(end-start)/TL;
                 double T=powf(T0,1.0-t)*powf(T1,t);
                 double p=expf((score_best-score_ref)/T);
                 //rnd<=pなら採用, rnd>pならもとに戻す
                 if(rnd>p){
+                    curmax=refmax;curmin=refmin;
                     Sum[Ans[cur1]]-=weight[cur2]-weight[cur1];
                     Sum[Ans[cur2]]-=weight[cur1]-weight[cur2];
                 }else{
