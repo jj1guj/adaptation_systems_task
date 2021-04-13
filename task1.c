@@ -87,7 +87,7 @@ int main(int argc,char **argv){
     end=clock();
 
     //局所探索(焼きなまし)
-    while(((double)end-start)/CLOCKS_PER_SEC*1000<=TL){
+    while((double)(end-start)/CLOCKS_PER_SEC*1000<=TL){
         //交叉方法
         //1点交叉: 任意の1点を選んで反転
         //多点交叉: 任意の幅を選んで反転
