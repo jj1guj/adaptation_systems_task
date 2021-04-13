@@ -25,7 +25,6 @@ double Scores[N];
 double score_best;
 
 int n_weights=0;
-char* L="ABCDEF";
 
 double scoring(int A[N]){
     double Sum[N];
@@ -58,7 +57,7 @@ int main(int argc,char**argv){
     clock_t start=clock();//実行時間の計測開始
     clock_t end;
     long int itr=0;
-    double TL=600*1000-10;//[msec]
+    double TL=60*1000-10;//[msec]
     double T0=1e10;
     double T1=1e2;
     int flg=1;//焼きなまし: 0, 山登り: 1
@@ -70,7 +69,7 @@ int main(int argc,char**argv){
 
     FILE *fp;
     char cbuf[1024];
-    if ((fp = fopen(argv[2], "r")) == NULL) {
+    if ((fp = fopen(argv[1], "r")) == NULL) {
         //エラー出力；
         exit(1);
     }
@@ -184,10 +183,7 @@ int main(int argc,char**argv){
 
     //最もよかったものを出力
     for(int i=0;i<N;++i)if(Scores[i]<=score_best){
-        for(int j=0; j<n_weights;++j){
-            if(G[i][j]>=10)printf("%c",L[G[i][j]%10]);
-            else printf("%d",G[i][j]);
-        }
+        for(int j=0; j<n_weights;++j)printf("%d",G[i][j]);
         printf("\n");
         break;
     }
