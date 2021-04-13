@@ -62,9 +62,10 @@ int main(int argc,char**argv){
     clock_t start=clock();//実行時間の計測開始
     clock_t end;
     long int itr=0;
-    double TL=60*1000-10;//[msec]
-    double T0=1e-100;
-    double T1=1e-100;
+    double TL=600*1000-10;//[msec]
+    double T0=1e10;
+    double T1=1e2;
+    int flg=1;//焼きなまし: 0, 山登り: 1
 
     //乱数の初期化
     srand((unsigned int)time(NULL));
@@ -120,25 +121,25 @@ int main(int argc,char**argv){
             Sum[Ans[cur]]-=weight[cur];
             Sum[val]+=weight[cur];
             score_ref=scoring();
-            //printf("%lf %lf %lf\n",Sum[curmin],Sum[curmax],score_ref);
-            //printf("%lf %lf\n",Sum[curmin],Sum[curmax]);
-            //printf("%lf\n",score_ref);
 
             if(score_ref>score_best){
-                /*curmax=refmax;curmin=refmin;
-                Sum[Ans[cur]]+=weight[cur];
-                Sum[val]-=weight[cur];*/
-                double rnd=rand()/(double)RAND_MAX;
-                double t=(end-start)/TL;
-                double T=powf(T0,1.0-t)*powf(T1,t);
-                double p=expf((score_best-score_ref)/T);
-                //rnd<=pなら採用, rnd>pならもとに戻す
-                if(rnd>p){
+                if(flg==1){
                     curmax=refmax;curmin=refmin;
                     Sum[Ans[cur]]+=weight[cur];
                     Sum[val]-=weight[cur];
                 }else{
-                    Ans[cur]=val;
+                    double rnd=rand()/(double)RAND_MAX;
+                    double t=(end-start)/TL;
+                    double T=powf(T0,1.0-t)*powf(T1,t);
+                    double p=expf((score_best-score_ref)/T);
+                    //rnd<=pなら採用, rnd>pならもとに戻す
+                    if(rnd>p){
+                        curmax=refmax;curmin=refmin;
+                        Sum[Ans[cur]]+=weight[cur];
+                        Sum[val]-=weight[cur];
+                    }else{
+                        Ans[cur]=val;
+                    }
                 }
             }else{
                 Ans[cur]=val;
@@ -156,20 +157,23 @@ int main(int argc,char**argv){
             //printf("%lf %lf %lf\n",Sum[curmin],Sum[curmax],score_ref);
 
             if(score_ref>score_best){
-                /*curmax=refmax;curmin=refmin;
-                Sum[Ans[cur]]+=weight[cur];
-                Sum[val]-=weight[cur];*/
-                double rnd=rand()/(double)RAND_MAX;
-                double t=(end-start)/TL;
-                double T=powf(T0,1.0-t)*powf(T1,t);
-                double p=expf((score_best-score_ref)/T);
-                //rnd<=pなら採用, rnd>pならもとに戻す
-                if(rnd>p){
+                if(flg==1){
                     curmax=refmax;curmin=refmin;
                     Sum[Ans[cur]]+=weight[cur];
                     Sum[val]-=weight[cur];
                 }else{
-                    Ans[cur]=val;
+                    double rnd=rand()/(double)RAND_MAX;
+                    double t=(end-start)/TL;
+                    double T=powf(T0,1.0-t)*powf(T1,t);
+                    double p=expf((score_best-score_ref)/T);
+                    //rnd<=pなら採用, rnd>pならもとに戻す
+                    if(rnd>p){
+                        curmax=refmax;curmin=refmin;
+                        Sum[Ans[cur]]+=weight[cur];
+                        Sum[val]-=weight[cur];
+                    }else{
+                        Ans[cur]=val;
+                    }
                 }
             }else{
                 Ans[cur]=val;
@@ -188,20 +192,23 @@ int main(int argc,char**argv){
             //printf("%lf %lf %lf\n",Sum[curmin],Sum[curmax],score_ref);
 
             if(score_ref>score_best){
-                /*curmax=refmax;curmin=refmin;
-                Sum[Ans[cur1]]-=weight[cur2]-weight[cur1];
-                Sum[Ans[cur2]]-=weight[cur1]-weight[cur2];*/
-                double rnd=rand()/(double)RAND_MAX;
-                double t=(end-start)/TL;
-                double T=powf(T0,1.0-t)*powf(T1,t);
-                double p=expf((score_best-score_ref)/T);
-                //rnd<=pなら採用, rnd>pならもとに戻す
-                if(rnd>p){
+                if(flg==1){
                     curmax=refmax;curmin=refmin;
                     Sum[Ans[cur1]]-=weight[cur2]-weight[cur1];
                     Sum[Ans[cur2]]-=weight[cur1]-weight[cur2];
                 }else{
-                    swap(Ans[cur1],Ans[cur2]);
+                    double rnd=rand()/(double)RAND_MAX;
+                    double t=(end-start)/TL;
+                    double T=powf(T0,1.0-t)*powf(T1,t);
+                    double p=expf((score_best-score_ref)/T);
+                    //rnd<=pなら採用, rnd>pならもとに戻す
+                    if(rnd>p){
+                        curmax=refmax;curmin=refmin;
+                        Sum[Ans[cur1]]-=weight[cur2]-weight[cur1];
+                        Sum[Ans[cur2]]-=weight[cur1]-weight[cur2];
+                    }else{
+                        swap(Ans[cur1],Ans[cur2]);
+                    }
                 }
             }else{
                 swap(Ans[cur1],Ans[cur2]);
