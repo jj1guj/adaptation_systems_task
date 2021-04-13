@@ -12,22 +12,28 @@
 
 #define N 4096
 #define swap(a,b) (a ^= b,b = a ^ b,a ^= b)
+
+double max(double a,double b){return a>b?a:b;};
+double min(double a,double b){return a<b?a:b;};
+
 int group_num;
 double weight[N],weight_sorted[N];
-double Sum[16];
+double Sum[16],Smax,Smin;
 double Ave=0;
 double score_best;
 
-int Ans[N],Ans_best[N],Distance[N];
+int Ans[N],Ans_best[N];
 int n_weights=0;
 char* L="ABCDEF";
 
 //得点は各グループの分散にする
 double scoring(){
-    double score=0;
-    for(int i=0;i<group_num;++i)score+=powf(Sum[i]-Ave,2);
-    score/=group_num;
-    return score;
+    double maxval=Sum[0],minval=Sum[0];
+    for(int i=1;i<group_num;++i){
+        maxval=max(maxval,Sum[i]);
+        minval=min(minval,Sum[i]);
+    }
+    return maxval-minval;
 }
 
 void greedy(){
@@ -53,7 +59,7 @@ int main(int argc,char**argv){
     clock_t start=clock();//実行時間の計測開始
     clock_t end;
     long int itr=0;
-    double TL=10000-10;//[msec]
+    double TL=60*1000-10;//[msec]
     double T0=1e10;
     double T1=1e2;
 
@@ -74,10 +80,6 @@ int main(int argc,char**argv){
     }
     fclose(fp);
 
-    //各グループの平均を求める
-    for(int i=0; i<n_weights; ++i)Ave+=weight[i];
-    Ave/=group_num;
-
     //ランダムに初期化
     for(int i=0; i<n_weights; ++i)Ans[i]=rand()%group_num;
 
@@ -86,14 +88,16 @@ int main(int argc,char**argv){
 
     //初期解のスコアを算出する
     score_best=scoring();
-    printf("# %d: %1.30e\n",clock()-start,score_best);
+    printf("# %.0lf: %1.30e\n",(double)(clock()-start)/CLOCKS_PER_SEC*1000,score_best);
     greedy();
-    printf("# %d: %1.30e\n",clock()-start,score_best);
+    score_best=scoring();
+
+    printf("# %.0lf: %1.30e\n",(double)(clock()-start)/CLOCKS_PER_SEC*1000,score_best);
     for(int i=0;i<n_weights;++i)Ans_best[i]=Ans[i];
     end=clock();
 
     //焼きなまし
-    /*while(end-start<=TL){
+    while((double)(end-start)/CLOCKS_PER_SEC*1000<=TL){
         double score_ref;
         if(rand()%2==0){
             //1点交叉
@@ -103,7 +107,7 @@ int main(int argc,char**argv){
             Sum[Ans[cur]]-=weight[cur];
             Sum[val]+=weight[cur];
             score_ref=scoring();
-            //printf("%lf\n",score_ref);
+
             if(score_ref>score_best){
                 double rnd=rand()/(double)RAND_MAX;
                 double t=(end-start)/TL;
@@ -116,6 +120,8 @@ int main(int argc,char**argv){
                 }else{
                     Ans[cur]=val;
                 }
+            }else{
+                Ans[cur]=val;
             }
         }else{
             //2点swap
@@ -124,7 +130,7 @@ int main(int argc,char**argv){
             Sum[Ans[cur1]]+=weight[cur2]-weight[cur1];
             Sum[Ans[cur2]]+=weight[cur1]-weight[cur2];
             score_ref=scoring();
-            printf("%lf\n",score_ref);
+
             if(score_ref>score_best){
                 double rnd=rand()/(double)RAND_MAX;
                 double t=(end-start)/TL;
@@ -137,12 +143,14 @@ int main(int argc,char**argv){
                 }else{
                     swap(Ans[cur1],Ans[cur2]);
                 }
+            }else{
+                swap(Ans[cur1],Ans[cur2]);
             }
         }
 
         if(score_best>score_ref){
             score_best=score_ref;
-            printf("# %d: %1.30e\n",clock()-start,score_best);
+            printf("# %.0lf: %1.30e\n",(double)(clock()-start)/CLOCKS_PER_SEC*1000,score_best);
             //最適解を保存しておく
             for(int i=0;i<n_weights;++i)Ans_best[i]=Ans[i];
         }
@@ -151,10 +159,21 @@ int main(int argc,char**argv){
         if(itr%100==0){
             end=clock();
         }
-    }*/
-
+    }
+    
     //最適解より悪いままなら最適解を採用
-    if(scoring()>score_best)for(int i=0;i<n_weights;++i)Ans[i]=Ans_best[i];
+    if(scoring()>score_best)for(int i=0;i<n_weights;++i){
+        Ans[i]=Ans_best[i];
+    }
+    for(int i=0;i<group_num;++i)Sum[i]=0;
+    for(int i=0;i<n_weights;++i)Sum[Ans[i]]+=weight[i];
+    Smax=Sum[0];
+    Smin=Sum[0];
+    for(int i=0;i<group_num;++i){
+        Smax=max(Smax,Sum[i]);
+        Smin=min(Smin,Sum[i]);
+    }
+    //printf("%.30lf, %.30lf\n",Smin,Smax);
     //解の出力
     for(int i=0; i<n_weights;++i){
         if(Ans[i]>=10)printf("%c",L[Ans[i]%10]);
