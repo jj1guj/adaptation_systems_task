@@ -18,8 +18,9 @@
 //double min(double a,double b){return a<b?a:b;};
 
 int group_num;
-int G[N][N];
+int G[N][N],Ans[N],Ans_best[N];
 int g1[N],g2[N],c1[N],c2[N];
+double Sum[2];
 double weight[N];
 double Scores[N];
 double score_best;
@@ -27,13 +28,13 @@ double score_best;
 int n_weights=0;
 
 double scoring(int A[N]){
-    double Sum[N];
-    for(int i=0;i<group_num;++i)Sum[i]=0;
-    for(int i=0;i<n_weights;++i)Sum[A[i]]+=weight[i];
-    double maxval=Sum[0],minval=Sum[0];
+    double S[N];
+    for(int i=0;i<group_num;++i)S[i]=0;
+    for(int i=0;i<n_weights;++i)S[A[i]]+=weight[i];
+    double maxval=S[0],minval=S[0];
     for(int i=1;i<group_num;++i){
-        maxval=max(maxval,Sum[i]);
-        minval=min(minval,Sum[i]);
+        maxval=max(maxval,S[i]);
+        minval=min(minval,S[i]);
     }
     return maxval-minval;
 }
@@ -57,7 +58,7 @@ int main(int argc,char**argv){
     clock_t start=clock();//実行時間の計測開始
     clock_t end;
     long int itr=0;
-    double TL_genetic=300*1000-10;//[msec]
+    double TL_genetic=200*1000;//[msec]
     double TL=600*1000-10;//[msec]
     double T0=1e10;
     double T1=1e2;
@@ -85,9 +86,9 @@ int main(int argc,char**argv){
     for(int i=0;i<N;++i){
         for(int j=0;j<n_weights;++j)G[i][j]=rand()%group_num;
         //1/10の確率で貪欲する
-        /*if(rand()%2==0){
+        if(rand()%10==0){
             greedy(G[i]);
-        }*/
+        }
     }
 
     //得点計算
@@ -96,12 +97,12 @@ int main(int argc,char**argv){
         if(i==0||Scores[i]<score_best)score_best=Scores[i];
     }
 
-    int M=5000;//1世代での交叉回数
+    int M=500;//1世代での交叉回数
     double alpha=1e-2;//突然変異を起こす確率
     printf("# %.0lf: %1.30e\n",(double)(clock()-start)/CLOCKS_PER_SEC*1000,score_best);
     end=clock();
 
-    while((double)(end-start)/CLOCKS_PER_SEC*1000<=TL){
+    while((double)(end-start)/CLOCKS_PER_SEC*1000<=TL_genetic){
         int cur1=rand()%N;
         int cur2=rand()%N;
         while(cur1==cur2)cur2=rand()%N;
@@ -182,10 +183,142 @@ int main(int argc,char**argv){
         }
     }
 
-    //最もよかったものを出力
+    //最もよかったものをヒューリスティックに解く
     for(int i=0;i<N;++i)if(Scores[i]<=score_best){
-        for(int j=0; j<n_weights;++j)printf("%d",G[i][j]);
-        printf("\n");
+        for(int j=0; j<n_weights;++j){
+            Ans[j]=G[i][j];
+            Ans_best[j]=G[i][j];
+            Sum[Ans[j]]+=weight[j];
+        }
         break;
     }
+    end=clock();
+    double score_best=fabs(Sum[1]-Sum[0]);
+
+    printf("# %.lf: start heuristic\n",(double)(clock()-start)/CLOCKS_PER_SEC*1000);
+    //局所探索(焼きなまし)
+    while((double)(end-start)/CLOCKS_PER_SEC*1000<=TL){
+        //交叉方法
+        //1点交叉: 任意の1点を選んで反転
+        //多点交叉: 任意の幅を選んで反転
+        //2点swap: 任意の2範囲(幅は2以上)を選んでswap
+        double score_ref;
+        if(rand()%3==0){
+            //1点交叉
+            //ランダムに1つ選んで符号を反転させる
+            //double score_origin=fabs(Sum[0]-Sum[1]);
+            int cursole=rand()%n_weights;
+            Sum[Ans[cursole]]-=weight[cursole];
+            Sum[(Ans[cursole]+1)%2]+=weight[cursole];
+            Ans[cursole]=(Ans[cursole]+1)%2;
+            score_ref=fabs(Sum[0]-Sum[1]);
+
+            //よくなれば採用(変えたままにしてscore_bestを更新)
+
+            //悪ければexp(delta/T), T=T0^(1-t)*T1^tの確率で採用
+            if(score_ref>score_best){
+                double rnd=rand()/(double)RAND_MAX;
+                double t=(end-start)/TL;
+                double T=powf(T0,1.0-t)*powf(T1,t);
+                double p=expf((score_best-score_ref)/T);
+                //rnd<=pなら採用, rnd>pならもとに戻す
+                if(rnd>p){
+                    Sum[Ans[cursole]]-=weight[cursole];
+                    Sum[(Ans[cursole]+1)%2]+=weight[cursole];
+                    Ans[cursole]=(Ans[cursole]+1)%2;
+                }
+            }
+        }else if (rand()%3==1){
+            //多点交叉
+            int cur1,cur2;
+            cur1=rand()%n_weights;
+            cur2=rand()%n_weights;
+            
+            while(cur1==cur2)cur2=rand()%n_weights;
+            //printf("%d\n",abs(cur1-cur2));
+            //min(cur1,cur2)からmax(cur1,cur2)まで反転する
+            for(int i=min(cur1,cur2);i<=max(cur1,cur2);++i){
+                Sum[Ans[i]]-=weight[i];
+                Ans[i]=(Ans[i]+1)%2;
+                Sum[Ans[i]]+=weight[i];
+            }
+
+            score_ref=fabs(Sum[0]-Sum[1]);
+            //悪ければexp(delta/T), T=T0^(1-t)*T1^tの確率で採用
+            if(score_ref>score_best){
+                double rnd=rand()/(double)RAND_MAX;
+                double t=(end-start)/TL;
+                double T=powf(T0,1.0-t)*powf(T1,t);
+                double p=expf((score_best-score_ref)/T);
+                //rnd<=pなら採用, rnd>pならもとに戻す
+                if(rnd>p){
+                    for(int i=min(cur1,cur2);i<=max(cur1,cur2);++i){
+                        Sum[Ans[i]]-=weight[i];
+                        Ans[i]=(Ans[i]+1)%2;
+                        Sum[Ans[i]]+=weight[i];
+                    }
+                }
+            }
+        }else{
+            //2点swap
+            int cur1,cur2,width,width_ref;
+            cur1=rand()%(n_weights-1);
+            cur2=rand()%(n_weights-1);
+            while(cur1==cur2 || abs(cur1-cur2)<2)cur2=rand()%(n_weights-1);
+            width=abs(cur2-cur1);
+            width_ref=min(width,n_weights-max(cur1,cur2));
+            width=rand()%width_ref+1;
+            while(width<2)width=rand()%width_ref+1;
+            //swapする
+            for(int i=0;i<width;++i){
+                Sum[Ans[cur1+i]]-=weight[cur1+i];
+                Sum[Ans[cur2+i]]-=weight[cur2+i];
+                swap(Ans[cur1+i],Ans[cur2+i]);
+                Sum[Ans[cur1+i]]+=weight[cur1+i];
+                Sum[Ans[cur2+i]]+=weight[cur2+i];
+            }
+
+            score_ref=fabs(Sum[0]-Sum[1]);
+            //悪ければexp(delta/T), T=T0^(1-t)*T1^tの確率で採用
+            if(score_ref>score_best){
+                double rnd=rand()/(double)RAND_MAX;
+                double t=(end-start)/TL;
+                double T=powf(T0,1.0-t)*powf(T1,t);
+                double p=expf((score_best-score_ref)/T);
+                //rnd<=pなら採用, rnd>pならもとに戻す
+                if(rnd>p){
+                    for(int i=0;i<width;++i){
+                        Sum[Ans[cur1+i]]-=weight[cur1+i];
+                        Sum[Ans[cur2+i]]-=weight[cur2+i];
+                        swap(Ans[cur1+i],Ans[cur2+i]);
+                        Sum[Ans[cur1+i]]+=weight[cur1+i];
+                        Sum[Ans[cur2+i]]+=weight[cur2+i];
+                    }
+                }
+            }
+        }
+        
+        if(score_best>score_ref){
+            score_best=score_ref;
+            printf("# %.0lf: %1.30e\n",(double)(clock()-start)/CLOCKS_PER_SEC*1000,score_best);
+            //最適解を保存しておく
+            for(int i=0;i<n_weights;++i)Ans_best[i]=Ans[i];
+        }
+
+        ++itr;
+        if(itr%100==0){
+            end=clock();
+        }
+    }
+
+    double score=0;
+    Sum[0]=0;
+    Sum[1]=0;
+    for(int i=0;i<n_weights;++i)Sum[Ans[i]]+=weight[i];
+    //最適解より悪いままなら最適解を採用
+    if(fabs(Sum[1]-Sum[0])>score_best)for(int i=0;i<n_weights;++i)Ans[i]=Ans_best[i];
+    for(int i=0;i<n_weights;++i)printf("%d",Ans[i]);
+    printf("\n");
+    //printf("%lf\n",scoring());
+
 }
