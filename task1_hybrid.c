@@ -58,7 +58,7 @@ int main(int argc,char**argv){
     clock_t start=clock();//実行時間の計測開始
     clock_t end;
     long int itr=0;
-    double TL_genetic=200*1000;//[msec]
+    double TL_genetic=250*1000;//[msec]
     double TL=600*1000-10;//[msec]
     double T0=1e10;
     double T1=1e2;
