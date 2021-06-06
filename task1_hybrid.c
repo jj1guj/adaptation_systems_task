@@ -5,12 +5,13 @@
 
 #include<stdio.h>
 #include<stdlib.h>
-//#include<unistd.h>
+#include<unistd.h>
 #include<signal.h>
 #include<time.h>
 #include<math.h>
 
-#define N 4096
+//#define N 4096
+#define N 16384
 #define swap(a,b) (a ^= b,b = a ^ b,a ^= b)
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
@@ -86,9 +87,9 @@ int main(int argc,char**argv){
     for(int i=0;i<N;++i){
         for(int j=0;j<n_weights;++j)G[i][j]=rand()%group_num;
         //1/10の確率で貪欲する
-        if(rand()%10==0){
+        /*if(rand()%10==0){
             greedy(G[i]);
-        }
+        }*/
     }
 
     //得点計算
